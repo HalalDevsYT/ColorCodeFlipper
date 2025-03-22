@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Color Flipper</title>
+    <title>Color Flipper Deluxe</title>
     <style>
         body {
             display: flex;
@@ -12,41 +12,136 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            transition: background-color 0.5s ease;
+            transition: background 0.5s ease;
             font-family: Arial, sans-serif;
+        }
+        .container {
+            text-align: center;
         }
         button {
             padding: 10px 20px;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
             border: none;
             border-radius: 5px;
             background-color: #333;
             color: white;
+            margin: 5px;
         }
         button:hover {
             background-color: #555;
         }
+        select {
+            padding: 8px;
+            font-size: 16px;
+            margin: 10px;
+        }
         #colorCode {
-            margin-top: 20px;
-            font-size: 24px;
+            margin: 15px 0;
+            font-size: 20px;
             font-weight: bold;
+        }
+        #gradientInfo {
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
-    <button onclick="changeColor()">Change Color</button>
-    <div id="colorCode">#000000</div>
+    <div class="container">
+        <button onclick="changeColor(false)">New Solid Color</button>
+        <button onclick="changeColor(true)">New Gradient</button>
+        <button onclick="copyToClipboard()">Copy to Clipboard</button>
+        <br>
+        <select id="colorFormat" onchange="updateDisplay()">
+            <option value="hex">HEX</option>
+            <option value="rgb">RGB</option>
+            <option value="hsl">HSL</option>
+        </select>
+        <div id="colorCode">#000000</div>
+        <div id="gradientInfo"></div>
+    </div>
 
     <script>
-        function changeColor() {
-            // Generate a random HEX color
-            const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
-            // Apply it to the background
-            document.body.style.backgroundColor = randomColor;
-            // Update the displayed color code
-            document.getElementById('colorCode').textContent = randomColor;
+        let currentColor1 = '#000000';
+        let currentColor2 = null; // For gradient
+
+        function getRandomColor() {
+            return '#' + Math.floor(Math.random() * 16777215).toString(16);
         }
+
+        function hexToRGB(hex) {
+            let r = parseInt(hex.slice(1, 3), 16);
+            let g = parseInt(hex.slice(3, 5), 16);
+            let b = parseInt(hex.slice(5, 7), 16);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function hexToHSL(hex) {
+            let r = parseInt(hex.slice(1, 3), 16) / 255;
+            let g = parseInt(hex.slice(3, 5), 16) / 255;
+            let b = parseInt(hex.slice(5, 7), 16) / 255;
+            let max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                let d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return `hsl(${Math.round(h * 360)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%)`;
+        }
+
+        function updateDisplay() {
+            const format = document.getElementById('colorFormat').value;
+            let displayText1 = currentColor1;
+            let displayText2 = currentColor2;
+
+            if (format === 'rgb') {
+                displayText1 = hexToRGB(currentColor1);
+                if (currentColor2) displayText2 = hexToRGB(currentColor2);
+            } else if (format === 'hsl') {
+                displayText1 = hexToHSL(currentColor1);
+                if (currentColor2) displayText2 = hexToHSL(currentColor2);
+            }
+
+            document.getElementById('colorCode').textContent = displayText1;
+            if (currentColor2) {
+                document.getElementById('gradientInfo').textContent = `Gradient: ${displayText1} to ${displayText2}`;
+            } else {
+                document.getElementById('gradientInfo').textContent = '';
+            }
+        }
+
+        function changeColor(isGradient) {
+            currentColor1 = getRandomColor();
+            if (isGradient) {
+                currentColor2 = getRandomColor();
+                document.body.style.background = `linear-gradient(to right, ${currentColor1}, ${currentColor2})`;
+            } else {
+                currentColor2 = null;
+                document.body.style.background = currentColor1;
+            }
+            updateDisplay();
+        }
+
+        function copyToClipboard() {
+            const text = currentColor2 
+                ? `${currentColor1} to ${currentColor2}` 
+                : currentColor1;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Color code copied to clipboard!');
+            });
+        }
+
+        // Initial color
+        changeColor(false);
     </script>
 </body>
 </html>
